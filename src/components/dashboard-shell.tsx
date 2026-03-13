@@ -9,6 +9,7 @@ import {
   Home,
   LayoutDashboard,
   ClipboardPlus,
+  FileText,
   LogOut,
   Menu,
   X,
@@ -17,6 +18,7 @@ import { useState } from "react";
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  { href: "/dashboard/claims", label: "Claims", icon: FileText },
   { href: "/dashboard/assessments/new", label: "New Assessment", icon: ClipboardPlus },
 ];
 

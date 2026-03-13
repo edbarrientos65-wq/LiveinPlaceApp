@@ -1,8 +1,8 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { assessments } from "@/db/schema";
-import { eq, desc, count } from "drizzle-orm";
+import { assessments, claims } from "@/db/schema";
+import { eq, desc, count, and } from "drizzle-orm";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,13 +15,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ClipboardPlus, ClipboardList, Users, ArrowRight } from "lucide-react";
+import { ClipboardPlus, ClipboardList, Users, FileText, ArrowRight } from "lucide-react";
 
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const [rows, [countResult]] = await Promise.all([
+  const [rows, [countResult], [claimsCountResult], [draftCountResult]] = await Promise.all([
     db
       .select()
       .from(assessments)
@@ -32,9 +32,19 @@ export default async function DashboardPage() {
       .select({ value: count() })
       .from(assessments)
       .where(eq(assessments.userId, session.user.id!)),
+    db
+      .select({ value: count() })
+      .from(claims)
+      .where(eq(claims.userId, session.user.id!)),
+    db
+      .select({ value: count() })
+      .from(claims)
+      .where(and(eq(claims.userId, session.user.id!), eq(claims.status, "draft"))),
   ]);
 
   const totalAssessments = countResult?.value ?? 0;
+  const totalClaims = claimsCountResult?.value ?? 0;
+  const draftClaims = draftCountResult?.value ?? 0;
   const uniquePatients = new Set(
     rows.map((r) => `${r.firstName} ${r.lastName}`)
   ).size;
@@ -58,7 +68,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -81,16 +91,38 @@ export default async function DashboardPage() {
             <div className="text-3xl font-bold">{uniquePatients}</div>
           </CardContent>
         </Card>
-        <Card className="sm:col-span-2 lg:col-span-1">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Claims
+            </CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{totalClaims}</div>
+            {draftClaims > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {draftClaims} draft{draftClaims !== 1 ? "s" : ""} pending
+              </p>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Quick Actions
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-2">
             <Link href="/dashboard/assessments/new">
-              <Button variant="outline" className="w-full gap-2 justify-between">
-                Start a new assessment
+              <Button variant="outline" size="sm" className="w-full gap-2 justify-between">
+                New Assessment
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link href="/dashboard/claims">
+              <Button variant="outline" size="sm" className="w-full gap-2 justify-between">
+                View Claims
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
