@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { assessments } from "@/db/schema";
-import { eq, desc, count } from "drizzle-orm";
+import { eq, desc, count, and, or, ilike } from "drizzle-orm";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,16 +16,43 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ClipboardPlus, ClipboardList, Users, ArrowRight } from "lucide-react";
+import { AssessmentFilters } from "@/components/assessment-filters";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ search?: string; insurance?: string }>;
+}) {
   const session = await auth();
   if (!session?.user) redirect("/login");
+
+  const params = await searchParams;
+  const search = params.search ?? "";
+  const insurance = params.insurance ?? "";
+
+  // Build filter conditions
+  const conditions = [eq(assessments.userId, session.user.id!)];
+
+  if (insurance) {
+    conditions.push(eq(assessments.insuranceType, insurance));
+  }
+
+  if (search) {
+    conditions.push(
+      or(
+        ilike(assessments.firstName, `%${search}%`),
+        ilike(assessments.lastName, `%${search}%`)
+      )!
+    );
+  }
+
+  const whereClause = and(...conditions);
 
   const [rows, [countResult]] = await Promise.all([
     db
       .select()
       .from(assessments)
-      .where(eq(assessments.userId, session.user.id!))
+      .where(whereClause)
       .orderBy(desc(assessments.createdAt))
       .limit(10),
     db
@@ -38,6 +65,8 @@ export default async function DashboardPage() {
   const uniquePatients = new Set(
     rows.map((r) => `${r.firstName} ${r.lastName}`)
   ).size;
+
+  const isFiltering = !!search || !!insurance;
 
   return (
     <div className="space-y-8">
@@ -98,22 +127,31 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {/* Recent assessments table */}
+      {/* Assessments table */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Assessments</CardTitle>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <CardTitle>Recent Assessments</CardTitle>
+          </div>
+          <AssessmentFilters />
         </CardHeader>
         <CardContent>
           {rows.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <ClipboardList className="mb-3 h-10 w-10 text-muted-foreground/40" />
-              <p className="text-muted-foreground">No assessments yet.</p>
-              <Link href="/dashboard/assessments/new" className="mt-4">
-                <Button variant="outline" size="sm" className="gap-2">
-                  <ClipboardPlus className="h-4 w-4" />
-                  Create your first assessment
-                </Button>
-              </Link>
+              <p className="text-muted-foreground">
+                {isFiltering
+                  ? "No assessments match your filters."
+                  : "No assessments yet."}
+              </p>
+              {!isFiltering && (
+                <Link href="/dashboard/assessments/new" className="mt-4">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <ClipboardPlus className="h-4 w-4" />
+                    Create your first assessment
+                  </Button>
+                </Link>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto -mx-6 sm:mx-0">
@@ -124,6 +162,7 @@ export default async function DashboardPage() {
                     <TableHead className="hidden sm:table-cell">DOB</TableHead>
                     <TableHead className="hidden md:table-cell">Insurance</TableHead>
                     <TableHead>Modifications</TableHead>
+                    <TableHead className="hidden sm:table-cell">Status</TableHead>
                     <TableHead className="hidden sm:table-cell">Date</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -159,6 +198,13 @@ export default async function DashboardPage() {
                               </Badge>
                             )}
                           </div>
+                        </Link>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <Link href={`/dashboard/assessments/${row.id}`} className="block">
+                          <Badge variant="outline" className="text-yellow-700 border-yellow-300 bg-yellow-50">
+                            Pending
+                          </Badge>
                         </Link>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-muted-foreground">
