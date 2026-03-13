@@ -16,6 +16,7 @@ import {
   Wrench,
   Calendar,
 } from "lucide-react";
+import { DeleteAssessmentButton } from "./delete-button";
 
 export default async function AssessmentDetailPage({
   params,
@@ -38,21 +39,24 @@ export default async function AssessmentDetailPage({
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/dashboard">
-          <Button variant="ghost" size="sm" className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {assessment.firstName} {assessment.lastName}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Assessment recorded {new Date(assessment.createdAt).toLocaleDateString()}
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {assessment.firstName} {assessment.lastName}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Assessment recorded {new Date(assessment.createdAt).toLocaleDateString()}
+            </p>
+          </div>
         </div>
+        <DeleteAssessmentButton id={assessment.id} />
       </div>
 
       {/* Patient Information */}
