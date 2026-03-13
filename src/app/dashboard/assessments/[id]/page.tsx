@@ -17,6 +17,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { DeleteAssessmentButton } from "./delete-button";
+import { GenerateClaimButton } from "./generate-claim-button";
 
 export default async function AssessmentDetailPage({
   params,
@@ -162,6 +163,20 @@ export default async function AssessmentDetailPage({
               day: "numeric",
             })}
           </p>
+        </CardContent>
+      </Card>
+
+      {/* Generate Claim */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Insurance Claim</CardTitle>
+        </CardHeader>
+        <Separator />
+        <CardContent className="pt-6">
+          <p className="text-sm text-muted-foreground mb-4">
+            Generate an AI-powered insurance claim document based on this assessment.
+          </p>
+          <GenerateClaimButton assessmentId={assessment.id} />
         </CardContent>
       </Card>
     </div>
