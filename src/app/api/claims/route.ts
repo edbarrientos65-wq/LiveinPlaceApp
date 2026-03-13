@@ -45,10 +45,7 @@ export async function POST(req: Request) {
   const body = await req.json();
   const parsed = createClaimSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Invalid input", details: parsed.error.flatten() },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
 
   const [assessment] = await db
@@ -71,7 +68,7 @@ export async function POST(req: Request) {
   try {
     content = await generateClaimContent(assessment);
   } catch (error) {
-    console.error("AI generation failed:", error);
+    console.error("AI generation failed:", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json(
       { error: "Failed to generate claim. Please try again." },
       { status: 500 }

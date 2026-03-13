@@ -40,7 +40,6 @@ export const claims = pgTable("claims", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull().$onUpdate(() => new Date()),
 }, (t) => [
-  index("claims_user_id_idx").on(t.userId),
   index("claims_assessment_id_idx").on(t.assessmentId),
   index("claims_user_status_idx").on(t.userId, t.status),
 ]);

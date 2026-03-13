@@ -12,7 +12,3 @@ const VALID_TRANSITIONS: Record<ClaimStatus, readonly ClaimStatus[]> = {
 export function isValidTransition(from: ClaimStatus, to: ClaimStatus): boolean {
   return VALID_TRANSITIONS[from].includes(to);
 }
-
-export function getValidTransitions(status: ClaimStatus): readonly ClaimStatus[] {
-  return VALID_TRANSITIONS[status];
-}

@@ -7,6 +7,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { isValidTransition } from "@/lib/claims/status-machine";
 
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const updateClaimSchema = z.object({
   content: z.string().min(1).max(50000).optional(),
   status: z.enum(claimStatusEnum.enumValues).optional(),
@@ -22,12 +24,22 @@ export async function GET(
   }
 
   const { id } = await params;
+  if (!uuidRegex.test(id)) {
+    return NextResponse.json({ error: "Invalid claim ID" }, { status: 400 });
+  }
 
   const claim = await db.query.claims.findFirst({
     where: (claims, { and, eq }) =>
       and(eq(claims.id, id), eq(claims.userId, session.user!.id!)),
     with: {
-      assessment: true,
+      assessment: {
+        columns: {
+          firstName: true,
+          lastName: true,
+          dateOfBirth: true,
+          insuranceType: true,
+        },
+      },
     },
   });
 
@@ -48,13 +60,14 @@ export async function PATCH(
   }
 
   const { id } = await params;
+  if (!uuidRegex.test(id)) {
+    return NextResponse.json({ error: "Invalid claim ID" }, { status: 400 });
+  }
+
   const body = await req.json();
   const parsed = updateClaimSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Invalid input", details: parsed.error.flatten() },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
 
   const [existing] = await db
@@ -116,8 +129,21 @@ export async function PATCH(
     const [updated] = await db
       .update(claims)
       .set({ content: parsed.data.content })
-      .where(and(eq(claims.id, id), eq(claims.userId, session.user.id)))
+      .where(
+        and(
+          eq(claims.id, id),
+          eq(claims.userId, session.user.id),
+          eq(claims.status, "draft")
+        )
+      )
       .returning();
+
+    if (!updated) {
+      return NextResponse.json(
+        { error: "Only draft claims can be edited" },
+        { status: 400 }
+      );
+    }
 
     revalidatePath(`/dashboard/claims/${id}`);
 
@@ -137,6 +163,9 @@ export async function DELETE(
   }
 
   const { id } = await params;
+  if (!uuidRegex.test(id)) {
+    return NextResponse.json({ error: "Invalid claim ID" }, { status: 400 });
+  }
 
   const [existing] = await db
     .select()
