@@ -129,32 +129,42 @@ export default async function DashboardPage() {
                 </TableHeader>
                 <TableBody>
                   {rows.map((row) => (
-                    <TableRow key={row.id}>
+                    <TableRow key={row.id} className="cursor-pointer hover:bg-muted/50">
                       <TableCell className="font-medium">
-                        {row.firstName} {row.lastName}
+                        <Link href={`/dashboard/assessments/${row.id}`} className="block">
+                          {row.firstName} {row.lastName}
+                        </Link>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-muted-foreground">
-                        {row.dateOfBirth}
+                        <Link href={`/dashboard/assessments/${row.id}`} className="block">
+                          {row.dateOfBirth}
+                        </Link>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
-                        <Badge variant="secondary">{row.insuranceType}</Badge>
+                        <Link href={`/dashboard/assessments/${row.id}`} className="block">
+                          <Badge variant="secondary">{row.insuranceType}</Badge>
+                        </Link>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {(row.modifications as string[]).slice(0, 2).map((m) => (
-                            <Badge key={m} variant="outline" className="text-xs">
-                              {m}
-                            </Badge>
-                          ))}
-                          {(row.modifications as string[]).length > 2 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{(row.modifications as string[]).length - 2}
-                            </Badge>
-                          )}
-                        </div>
+                        <Link href={`/dashboard/assessments/${row.id}`} className="block">
+                          <div className="flex flex-wrap gap-1">
+                            {(row.modifications as string[]).slice(0, 2).map((m) => (
+                              <Badge key={m} variant="outline" className="text-xs">
+                                {m}
+                              </Badge>
+                            ))}
+                            {(row.modifications as string[]).length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{(row.modifications as string[]).length - 2}
+                              </Badge>
+                            )}
+                          </div>
+                        </Link>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-muted-foreground">
-                        {new Date(row.createdAt).toLocaleDateString()}
+                        <Link href={`/dashboard/assessments/${row.id}`} className="block">
+                          {new Date(row.createdAt).toLocaleDateString()}
+                        </Link>
                       </TableCell>
                     </TableRow>
                   ))}
